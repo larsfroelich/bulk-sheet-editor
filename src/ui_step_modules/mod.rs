@@ -1,8 +1,9 @@
+mod bulk_creation;
 mod csv_import;
-mod test_ui_module;
-
+mod odf_template;
+pub use bulk_creation::BulkCreationModule;
 pub use csv_import::CsvImportModule;
-pub use test_ui_module::TestUiModule;
+pub use odf_template::OdfTemplateModule;
 
 pub trait UiStepModule {
     fn get_title(&self) -> String;
