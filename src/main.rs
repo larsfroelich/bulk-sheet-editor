@@ -3,9 +3,13 @@ mod ui_step_modules;
 
 extern crate alloc;
 
-use crate::ui_step_modules::{CsvImportModule, TestUiModule, UiStepModule};
-use alloc::string::String;
+use crate::ui_step_modules::{
+    CsvImportModule, OdfTemplateModule, SharedWorkflowState, UiStepModule,
+    WorksheetGenerationModule,
+};
+use alloc::{rc::Rc, string::String};
 use catppuccin_egui::{LATTE, MOCHA, set_theme};
+use core::cell::RefCell;
 use egui::{Align, Color32, FontId, Layout, RichText, Vec2};
 
 #[derive(Default)]
@@ -16,13 +20,13 @@ pub struct BulkSheetEditorApp {
 
 impl BulkSheetEditorApp {
     fn new() -> Self {
+        let shared_state = Rc::new(RefCell::new(SharedWorkflowState::default()));
         Self {
             dark_theme: false,
             ui_step_modules: vec![
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(CsvImportModule::new()),
+                Box::new(CsvImportModule::new(shared_state.clone())),
+                Box::new(OdfTemplateModule::new(shared_state.clone())),
+                Box::new(WorksheetGenerationModule::new(shared_state)),
             ],
         }
     }
