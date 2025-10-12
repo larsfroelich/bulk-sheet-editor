@@ -1,5 +1,5 @@
-use egui::Ui;
 use crate::ui_step_modules::UiStepModule;
+use egui::Ui;
 
 pub struct CsvImportModule {
     selected_file: Option<String>,
