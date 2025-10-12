@@ -5,7 +5,7 @@ extern crate alloc;
 
 use alloc::string::String;
 use catppuccin_egui::{set_theme, LATTE, MOCHA};
-use egui::{Align, Color32, FontId, Layout, RichText, Vec2};
+use egui::{Align, Color32, FontId, Layout, RichText, TextStyle, Vec2};
 use egui::UiKind::ScrollArea;
 use crate::ui_step_modules::{CsvImportModule, TestUiModule, UiStepModule};
 
@@ -20,19 +20,10 @@ impl BulkSheetEditorApp {
         Self {
             dark_theme: false,
             ui_step_modules: vec![
-                //Box::new(CsvImportModule::new()),
                 Box::new(TestUiModule::new()),
                 Box::new(TestUiModule::new()),
                 Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
+                Box::new(CsvImportModule::new()),
             ]
         }
     }
@@ -72,8 +63,9 @@ impl eframe::App for BulkSheetEditorApp {
             egui::ScrollArea::vertical().auto_shrink(false).show(ui, |ui| {
                 for step_nr in 0..self.ui_step_modules.len() {
                     let is_previous_step_complete = step_nr == 0 || self.ui_step_modules[step_nr.saturating_sub(1)].is_complete();
+                    let is_current_step = !self.ui_step_modules[step_nr].is_complete() && is_previous_step_complete;
                     ui.horizontal_wrapped(|ui| {
-                        ui.set_min_height(28.0);
+                        ui.set_min_height(32.0);
                         if self.ui_step_modules[step_nr].is_complete() {
                             if ui.button(
                                 RichText::new("✅")
@@ -90,9 +82,10 @@ impl eframe::App for BulkSheetEditorApp {
                                 .label("...")
                                 .on_hover_text("complete other tasks first");
                         }
+                        let step_text = RichText::new(format!("Step {}: {}", step_nr + 1, self.ui_step_modules[step_nr].get_title())).font(FontId::proportional(25.0));
                         ui.label(
-                            RichText::new(format!("Step {}: {}", step_nr + 1, self.ui_step_modules[step_nr].get_title()))
-                                .font(FontId::proportional(25.0)),
+                                if is_current_step {step_text.underline()}
+                                else{step_text}
                         );
                     });
 
