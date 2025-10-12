@@ -1,7 +1,7 @@
 use crate::ui_step_modules::{
     SharedState, UiStepModule, column_label_from_index, parse_cell_reference,
 };
-use calamine::{Data, DataType, Reader, open_workbook};
+use calamine::{Data, DataType, Reader, open_workbook_auto};
 use egui::{ComboBox, Grid, Ui};
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -84,15 +84,15 @@ impl UiStepModule for OdfImportModule {
             .odf_path
             .as_ref()
             .map(|p| p.display().to_string())
-            .unwrap_or_else(|| "No worksheet selected".to_string());
+            .unwrap_or_else(|| "No workbook selected".to_string());
 
-        ui.label("Select an ODF worksheet and map CSV columns to template cells");
+        ui.label("Select a workbook (ODS/XLSX) and map CSV columns to template cells");
         let has_template = self.state.borrow().odf_path.is_some();
         ui.horizontal(|ui| {
             ui.label(template_path);
             if ui.button("Browse…").clicked()
                 && let Some(path) = rfd::FileDialog::new()
-                    .add_filter("ODS", &["ods"])
+                    .add_filter("Spreadsheets", &["ods", "xlsx", "xlsm", "xls"])
                     .pick_file()
             {
                 self.open_template(path);
@@ -107,13 +107,13 @@ impl UiStepModule for OdfImportModule {
         }
 
         if self.state.borrow().odf_path.is_none() {
-            ui.label("Select a worksheet file to continue.");
+            ui.label("Select a workbook file to continue.");
             return;
         }
 
         let sheet_names = self.state.borrow().odf_sheet_names.clone();
         if sheet_names.is_empty() {
-            ui.label("No sheets found in the selected worksheet.");
+            ui.label("No sheets found in the selected workbook.");
             return;
         }
 
@@ -220,14 +220,12 @@ impl UiStepModule for OdfImportModule {
 }
 
 fn read_sheet_names(path: &PathBuf) -> Result<Vec<String>, String> {
-    let workbook: calamine::Ods<_> =
-        open_workbook(path).map_err(|err: calamine::OdsError| err.to_string())?;
+    let workbook = open_workbook_auto(path).map_err(|err| err.to_string())?;
     Ok(workbook.sheet_names().to_vec())
 }
 
 fn read_sheet_cells(path: &PathBuf, sheet: &str) -> Result<HashMap<String, String>, String> {
-    let mut workbook: calamine::Ods<_> =
-        open_workbook(path).map_err(|err: calamine::OdsError| err.to_string())?;
+    let mut workbook = open_workbook_auto(path).map_err(|err| err.to_string())?;
     let range = workbook
         .worksheet_range(sheet)
         .map_err(|err| err.to_string())?;
