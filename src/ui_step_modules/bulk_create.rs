@@ -1,6 +1,7 @@
 use crate::ui_step_modules::{SharedState, UiStepModule, parse_cell_reference};
+use calamine::{Data, DataType, Reader, open_workbook};
 use egui::Ui;
-use spreadsheet_ods::{read_ods, write_ods};
+use spreadsheet_ods::{Sheet, Value, WorkBook, write_ods};
 use std::cell::RefCell;
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -83,28 +84,56 @@ impl BulkCreateModule {
             return Err("No column mappings configured.".to_string());
         }
 
-        let mut workbook = read_ods(&template_path).map_err(|err| err.to_string())?;
-        let template_index = workbook
-            .sheet_idx(&template_sheet_name)
-            .ok_or_else(|| format!("Sheet '{}' not found in template", template_sheet_name))?;
-        let template_sheet = workbook.remove_sheet(template_index);
+        let template_cells = load_template_cells(&template_path, &template_sheet_name)?;
+        let mut workbook = WorkBook::new_empty();
 
         for (row_index, row) in rows.iter().enumerate() {
-            let mut new_sheet = template_sheet.clone();
-            let sheet_title = format!("{} {}", template_sheet_name, row_index + 1);
-            new_sheet.set_name(sheet_title);
+            let mut sheet = Sheet::new(format!("{} {}", template_sheet_name, row_index + 1));
+            for (row_idx, col_idx, value) in &template_cells {
+                sheet.set_value(*row_idx, *col_idx, value.clone());
+            }
             for mapping in &mappings {
                 if let Some((row_idx, col_idx)) = parse_cell_reference(&mapping.cell_ref)
                     && let Some(value) = row.get(mapping.column_index)
                 {
-                    new_sheet.set_value(row_idx, col_idx, value.clone());
+                    sheet.set_value(row_idx, col_idx, value.clone());
                 }
             }
-            workbook.push_sheet(new_sheet);
+            workbook.push_sheet(sheet);
         }
 
         write_ods(&mut workbook, output_path).map_err(|err| err.to_string())?;
         Ok(rows.len())
+    }
+}
+
+fn load_template_cells(path: &PathBuf, sheet: &str) -> Result<Vec<(u32, u32, Value)>, String> {
+    let mut workbook: calamine::Ods<_> =
+        open_workbook(path).map_err(|err: calamine::OdsError| err.to_string())?;
+    let range = workbook
+        .worksheet_range(sheet)
+        .map_err(|err| err.to_string())?;
+
+    let mut cells = Vec::new();
+    for (row, col, value) in range.cells() {
+        if value.is_empty() {
+            continue;
+        }
+        cells.push((row as u32, col as u32, data_to_value(value)));
+    }
+    Ok(cells)
+}
+
+fn data_to_value(data: &Data) -> Value {
+    match data {
+        Data::String(value) => Value::from(value.as_str()),
+        Data::Float(value) => Value::Number(*value),
+        Data::Int(value) => Value::Number(*value as f64),
+        Data::Bool(value) => Value::Boolean(*value),
+        Data::DateTimeIso(value) | Data::DurationIso(value) => Value::from(value.as_str()),
+        Data::DateTime(value) => Value::from(value.to_string()),
+        Data::Error(err) => Value::from(format!("Error: {:?}", err)),
+        Data::Empty => Value::Empty,
     }
 }
 
