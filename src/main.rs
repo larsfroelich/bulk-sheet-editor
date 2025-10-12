@@ -3,7 +3,9 @@ mod ui_step_modules;
 
 extern crate alloc;
 
-use crate::ui_step_modules::{CsvImportModule, TestUiModule, UiStepModule};
+use crate::ui_step_modules::{
+    BulkCreationModule, CsvImportModule, OdfTemplateModule, UiStepModule,
+};
 use alloc::string::String;
 use catppuccin_egui::{LATTE, MOCHA, set_theme};
 use egui::{Align, Color32, FontId, Layout, RichText, Vec2};
@@ -19,10 +21,9 @@ impl BulkSheetEditorApp {
         Self {
             dark_theme: false,
             ui_step_modules: vec![
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
                 Box::new(CsvImportModule::new()),
+                Box::new(OdfTemplateModule::new()),
+                Box::new(BulkCreationModule::new()),
             ],
         }
     }
