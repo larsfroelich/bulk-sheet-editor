@@ -3,7 +3,9 @@ mod ui_step_modules;
 
 extern crate alloc;
 
-use crate::ui_step_modules::{CsvImportModule, TestUiModule, UiStepModule};
+use crate::ui_step_modules::{
+    BulkCreationModule, CsvImportModule, OdfTemplateModule, UiStepModule, WorkflowState,
+};
 use alloc::string::String;
 use catppuccin_egui::{LATTE, MOCHA, set_theme};
 use egui::{Align, Color32, FontId, Layout, RichText, Vec2};
@@ -12,6 +14,7 @@ use egui::{Align, Color32, FontId, Layout, RichText, Vec2};
 pub struct BulkSheetEditorApp {
     dark_theme: bool,
     ui_step_modules: Vec<Box<dyn UiStepModule>>,
+    workflow_state: WorkflowState,
 }
 
 impl BulkSheetEditorApp {
@@ -19,11 +22,11 @@ impl BulkSheetEditorApp {
         Self {
             dark_theme: false,
             ui_step_modules: vec![
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
-                Box::new(TestUiModule::new()),
                 Box::new(CsvImportModule::new()),
+                Box::new(OdfTemplateModule::new()),
+                Box::new(BulkCreationModule::new()),
             ],
+            workflow_state: WorkflowState::default(),
         }
     }
 }
@@ -63,19 +66,22 @@ impl eframe::App for BulkSheetEditorApp {
                 .show(ui, |ui| {
                     for step_nr in 0..self.ui_step_modules.len() {
                         let is_previous_step_complete = step_nr == 0
-                            || self.ui_step_modules[step_nr.saturating_sub(1)].is_complete();
-                        let is_current_step = !self.ui_step_modules[step_nr].is_complete()
+                            || self.ui_step_modules[step_nr.saturating_sub(1)]
+                                .is_complete(&self.workflow_state);
+                        let is_current_step = !self.ui_step_modules[step_nr]
+                            .is_complete(&self.workflow_state)
                             && is_previous_step_complete;
                         ui.horizontal_wrapped(|ui| {
                             ui.set_min_height(32.0);
-                            if self.ui_step_modules[step_nr].is_complete() {
+                            if self.ui_step_modules[step_nr].is_complete(&self.workflow_state) {
                                 if ui
                                     .button(RichText::new("✅").color(Color32::DARK_GREEN))
                                     .on_hover_text("reset to this step")
                                     .clicked()
                                 {
                                     for remaining_step_nr in step_nr..self.ui_step_modules.len() {
-                                        self.ui_step_modules[remaining_step_nr].reset();
+                                        self.ui_step_modules[remaining_step_nr]
+                                            .reset(&mut self.workflow_state);
                                     }
                                 }
                             } else if is_previous_step_complete {
@@ -98,7 +104,7 @@ impl eframe::App for BulkSheetEditorApp {
 
                         if is_previous_step_complete {
                             ui.indent(20u32, |ui| {
-                                self.ui_step_modules[step_nr].draw_ui(ui);
+                                self.ui_step_modules[step_nr].draw_ui(ui, &mut self.workflow_state);
                             });
                         }
                         ui.add_space(15.0);
