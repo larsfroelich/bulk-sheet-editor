@@ -1,0 +1,14 @@
+[package]
+name = "bulk-sheet-editor"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies]
+catppuccin-egui = { version = "5.2.0", default-features = false, features = ["egui32"] }
+eframe = "0.32.0"
+egui = "0.32.0"
+egui_extras = "0.32.0"
+env_logger = "0.11.5"
+jwalk = "0.8.1"
+log = "0.4.22"
+rfd = "0.15.4"
