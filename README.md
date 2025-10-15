@@ -15,7 +15,7 @@ using input from a csv-file.
 For now, Bulk sheet editor is still in development and there is no initial release yet.
 To build and install directly from source, you can use
 
-`cargo install --git https://github.com/larsfroelich/file-kraken.git`
+`cargo install --git https://github.com/larsfroelich/bulk-sheet-editor.git`
 
 this requires installing [Rust/cargo](https://rust-lang.org/tools/install/):
 
