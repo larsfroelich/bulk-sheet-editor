@@ -6,7 +6,7 @@ using input from a csv-file.
 
 ## Features
 > WARNING - This is a work in progress. Use at your own risk.
-- import dats using CSV
+- import data using CSV
 - import Open File Format (ODF) files (sheets or docs)
 - map csv-columns to template-elements (cells or placeholders)
 - bulk create pages/sheets/documents
